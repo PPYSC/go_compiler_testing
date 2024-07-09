@@ -48,12 +48,12 @@ class MaskedGoReward:
 
     def get_code_reward(self, code, mask):
         masked_code = self._mask(code, mask)
-        print(masked_code)
         new_code = masked_code.replace("<mask>", self._generate(masked_code))
         reward, cost = self._reward_cost(new_code)
         
         return new_code, reward, cost
 
+'''
 
 code = "package main\nfunc helloworld() {\n\tprintln(\"Hello World!\")\n}"
 
@@ -62,3 +62,4 @@ print(rst[0])
 print('='*50)
 print(rst[1], rst[2])
 
+'''

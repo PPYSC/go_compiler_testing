@@ -31,7 +31,7 @@ set_seed(0)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 env = GymEnvironment(GymAvgTorqueWrapper(gym.make("HalfCheetah-v4")))
-env = MaskedGoEnv()
+env = MaskedGoEnv("./data/data_71421.jsonl")
 
 # setup RCTD3 algorithm, TD3 with reward constraint safety module
 rctd3_agent = PearlAgent(
