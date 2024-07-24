@@ -15,6 +15,8 @@ class DiffTestRunner:
         '''
         # check compile returncode
         compile_returncode_check = all(runner_rst[0].returncode == self.runner_rst_list[0][0].returncode for runner_rst in self.runner_rst_list)
+        # check compile stdout
+        compile_stdout_check = all(runner_rst[0].stdout == self.runner_rst_list[0][0].stdout for runner_rst in self.runner_rst_list)
         # check execute returncode
         execute_returncode_check = all(runner_rst[1].returncode == self.runner_rst_list[0][1].returncode for runner_rst in self.runner_rst_list)
         # check execute stdout
@@ -35,7 +37,10 @@ class DiffTestRunner:
                 else:
                     return -1
             else:
-                return 0
+                if compile_stdout_check:
+                    return 1
+                else:
+                    return 0
         else:
             return -1
 

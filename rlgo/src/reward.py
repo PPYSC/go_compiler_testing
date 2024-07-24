@@ -2,7 +2,9 @@ import random
 
 from discriminator.run import Cluster
 from generator.node_mask_codet5p import NodeMaskCodet5p
+from go_tree_sitter.go_tree_sitter_tool import GoTreeSitterTool
 from go_tree_sitter.go_parser import GoParser
+
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -41,25 +43,18 @@ class MaskedGoReward:
     def _generate(self, masked_code):
         return self.generator.generate(masked_code)
     
-    def _reward_cost(self, code):
+    def get_reward_cost(self, code):
         # TODO: compileable
-        label, probability = self.discriminator.cluster(code)
-        return probability[1], probability[0]
+        node = self.parser.parse(code).root_node
+        if GoTreeSitterTool.has_error(node):
+            return -10, 10
+        else:
+            label, probability = self.discriminator.cluster(code)
+            return probability[1], probability[0]
 
-    def get_code_reward(self, code, mask):
+    def get_code_reward_cost(self, code, mask):
         masked_code = self._mask(code, mask)
         new_code = masked_code.replace("<mask>", self._generate(masked_code))
-        reward, cost = self._reward_cost(new_code)
+        reward, cost = self.get_reward_cost(new_code)
         
         return new_code, reward, cost
-
-'''
-
-code = "package main\nfunc helloworld() {\n\tprintln(\"Hello World!\")\n}"
-
-rst = MaskedGoReward().get_code_reward(code,8)
-print(rst[0])
-print('='*50)
-print(rst[1], rst[2])
-
-'''

@@ -10,4 +10,4 @@ class GoParser:
 
     def parse(self, code):
         tree = self.parser.parse(bytes(code, 'utf8'))
-        return tree.root_node
+        return tree

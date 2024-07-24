@@ -8,13 +8,18 @@ class CmdRunner:
     def __repr__(self):
         return f"<CmdRunner: {self.compile_cmd}, {self.execute_cmd}>"
 
-    def _run_cmd(self, cmd):
-        return subprocess.run(cmd, capture_output=True, shell=True, encoding="utf8")
+    def _run_cmd(self, cmd, cwd):
+        try:
+            return subprocess.run(cmd, cwd=cwd, shell=True, encoding="utf8", stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60)
+        except subprocess.TimeoutExpired:
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=1,
+                stdout="Command timed out",
+            )
 
     def run(self, project_path):
         completed_progress_list = []
-        cmd = f"cd {project_path} && {self.compile_cmd}"
-        completed_progress_list.append(self._run_cmd(cmd))
-        cmd = f"cd {project_path} && {self.execute_cmd}"
-        completed_progress_list.append(self._run_cmd(cmd))
+        completed_progress_list.append(self._run_cmd(self.compile_cmd, project_path))
+        completed_progress_list.append(self._run_cmd(self.execute_cmd, project_path))
         return completed_progress_list

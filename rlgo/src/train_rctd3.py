@@ -1,4 +1,3 @@
-from goenv import MaskedGoEnv
 from pearl.utils.functional_utils.experimentation.set_seed import set_seed
 from pearl.replay_buffers.sequential_decision_making.fifo_off_policy_replay_buffer import FIFOOffPolicyReplayBuffer
 from pearl.utils.functional_utils.train_and_eval.online_learning import online_learning
@@ -21,18 +20,20 @@ from matplotlib import pyplot as plt
 
 import torch
 import numpy as np
+import datetime
+import pickle
 
 set_seed(0)
 
 
-#from goenv import MaskedGoEnv
+from goenv_boxaction import MaskedGoEnv
 
 set_seed(0)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 env = GymEnvironment(GymAvgTorqueWrapper(gym.make("HalfCheetah-v4")))
-env = MaskedGoEnv("./data/data_71421.jsonl")
-
+env = MaskedGoEnv("./data/data_71421_token_size_filtered.jsonl")
+env.reset()
 # setup RCTD3 algorithm, TD3 with reward constraint safety module
 rctd3_agent = PearlAgent(
                     policy_learner=TD3(
@@ -72,7 +73,8 @@ rctd3_agent = PearlAgent(
                 ) 
 
 # Run RCTD3 on the environment
-number_of_steps = 200000
+'''
+number_of_steps = 300000
 print_every_x_steps = 20000
 record_period = 1000
 
@@ -83,4 +85,24 @@ rctd3_info = online_learning(
     print_every_x_steps=1,
     record_period=record_period,
 )
+'''
 
+number_of_episodes = 40000
+print_every_x_episodes = 1
+learn_after_episode = True
+
+rctd3_info = online_learning(
+    rctd3_agent,
+    env,
+    number_of_episodes=number_of_episodes,
+    print_every_x_episodes=print_every_x_episodes,
+    learn_after_episode=learn_after_episode,
+)
+
+current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+checkpoint_path = f"./saved_model/rctd3_checkpoint_{current_time}.bin"
+
+with open(checkpoint_path, 'wb') as f:
+    pickle.dump(rctd3_agent, f)
+
+print("Checkpoint saved.")
