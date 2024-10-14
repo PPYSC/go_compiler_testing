@@ -1,13 +1,13 @@
-from diff_test.cmd_runner import CmdRunner
-from diff_test.diff_test_runner import DiffTestRunner
+from cal_coverage import CalCoverage
 
+cal_coverage = CalCoverage()
 
-cmdrunnerlist = [CmdRunner("go build -o exe0", "./exe0"), CmdRunner("go build -compiler=gccgo -o exe1", "./exe1")]
+path = "/home/shareduser/ysc/go_compiler_testing/difftest/src/test_unit"
 
-difftestrunner = DiffTestRunner(cmdrunnerlist, "/home/shareduser/ysc/go_compiler_testing/difftest/tb")
+name = "t_cal"
 
-check, rst = difftestrunner.run()
+code = "package main\n\nimport \"fmt\"\n\nvar tbd string\nvar overwrite string = \"dibs\"\n\nvar tbdcopy = tbd\nvar overwritecopy = overwrite\nvar arraycopy = [2]string{tbd, overwrite}\n\nvar b bool\nvar x int\n\nfunc main() {\n\tfmt.Println(tbd)\n\tfmt.Println(tbdcopy)\n\tfmt.Println(arraycopy[0])\n\n\tfmt.Println(overwrite)\n\tfmt.Println(overwritecopy)\n\tfmt.Println(arraycopy[1])\n\n\tif b || x != 0 {\n\t\tpanic(\"b or x overwritten\")\n\t}\n}"
 
-print(check)
-print(rst)
+rst_cov = cal_coverage.cal_coverage(path, name, code)
 
+print(rst_cov)

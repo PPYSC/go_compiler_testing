@@ -1,4 +1,5 @@
 import random
+import subprocess
 
 from discriminator.run import Cluster
 from generator.node_mask_codet5p import NodeMaskCodet5p
@@ -15,6 +16,18 @@ class MaskedGoReward:
         self.generator = NodeMaskCodet5p()
         self.discriminator = Cluster()
         self.parser = GoParser()
+
+    def _has_syntax_error(self, code):
+        with open("temp.go", "w") as f:
+            f.write(code)
+        try:
+            result = subprocess.run(["go", "vet", "temp.go"], capture_output=True, text=True)
+            if result.returncode != 0:
+                return True
+            else:
+                return False
+        finally:
+            subprocess.run(["rm", "temp.go"])
 
     def _mask(self, code, mask):
         def find_ith_node(node, index, i):
@@ -37,7 +50,7 @@ class MaskedGoReward:
             end_byte = target_node.end_byte
             masked_code = code[:start_byte] + "<mask>" + code[end_byte:]
         else:
-            masked_code= code + "<mask>"
+            masked_code = code + "<mask>"
         return masked_code
 
     def _generate(self, masked_code):
@@ -45,8 +58,7 @@ class MaskedGoReward:
     
     def get_reward_cost(self, code):
         # TODO: compileable
-        node = self.parser.parse(code).root_node
-        if GoTreeSitterTool.has_error(node):
+        if self._has_syntax_error(code):
             return -10, 10
         else:
             label, probability = self.discriminator.cluster(code)

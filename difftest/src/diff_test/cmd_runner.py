@@ -10,7 +10,7 @@ class CmdRunner:
 
     def _run_cmd(self, cmd, cwd):
         try:
-            return subprocess.run(cmd, cwd=cwd, shell=True, encoding="utf8", stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60)
+            return subprocess.run(cmd, cwd=cwd, shell=True, encoding="utf8", errors='replace', stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60)
         except subprocess.TimeoutExpired:
             return subprocess.CompletedProcess(
                 args=cmd,

@@ -1,3 +1,4 @@
+from pearl.utils.functional_utils.train_and_eval.online_learning import run_episode
 from pearl.utils.functional_utils.experimentation.set_seed import set_seed
 from pearl.replay_buffers.sequential_decision_making.fifo_off_policy_replay_buffer import FIFOOffPolicyReplayBuffer
 from pearl.utils.functional_utils.train_and_eval.online_learning import online_learning
@@ -31,9 +32,9 @@ from goenv_boxaction_fixed_reward_cost import MaskedGoEnv
 set_seed(0)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-env = GymEnvironment(GymAvgTorqueWrapper(gym.make("HalfCheetah-v4")))
-env = MaskedGoEnv("./data/data_71421_token_size_filtered.jsonl")
-env.reset()
+corpus_path = "/home/shareduser/ysc/go_compiler_testing/rlgo/src/data/data_go_testcase_nocomment_token_size_filtered.jsonl"
+env = MaskedGoEnv(corpus_path)
+
 # setup RCTD3 algorithm, TD3 with reward constraint safety module
 rctd3_agent = PearlAgent(
                     policy_learner=TD3(
@@ -73,36 +74,62 @@ rctd3_agent = PearlAgent(
                 ) 
 
 # Run RCTD3 on the environment
-'''
-number_of_steps = 300000
-print_every_x_steps = 20000
-record_period = 1000
 
-rctd3_info = online_learning(
-    rctd3_agent,
-    env,
-    number_of_steps=number_of_steps,
-    print_every_x_steps=1,
-    record_period=record_period,
-)
-'''
-
-number_of_episodes = 1
+number_of_episodes = 15000
 print_every_x_episodes = 1
 learn_after_episode = True
 
-rctd3_info = online_learning(
+save_every_x_episodes = 2
+
+check_point_prefix = "/home/shareduser/ysc/go_compiler_testing/rlgo/src/saved_model/rctd3_fixed_reward_cost_checkpoint"
+
+
+'''rctd3_info = online_learning(
     rctd3_agent,
     env,
     number_of_episodes=number_of_episodes,
     print_every_x_episodes=print_every_x_episodes,
     learn_after_episode=learn_after_episode,
-)
+)'''
+
+total_steps = 0
+total_episodes = 0
+while True:
+    if total_episodes >= number_of_episodes:
+        break
+    old_total_steps = total_steps
+    episode_info, episode_total_steps = run_episode(
+        rctd3_agent,
+        env,
+        learn=True,
+        exploit=False,
+        learn_after_episode=learn_after_episode,
+        total_steps=old_total_steps,
+    )
+    total_steps += episode_total_steps
+    total_episodes += 1
+    if total_episodes % print_every_x_episodes == 0:
+        print(
+                f"episode {total_episodes}, step {total_steps}, agent={rctd3_agent}, env={env}",
+            )
+        for key in episode_info:
+                print(f"{key}: {episode_info[key]}")
+
+    if total_episodes % save_every_x_episodes == 0:
+        current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        checkpoint_path = check_point_prefix + f"_{current_time}_episodes_{total_episodes}.bin"
+        #checkpoint_path = f"./saved_model/rctd3_fixed_reward_cost_checkpoint_{current_time}.bin"
+        with open(checkpoint_path, 'wb') as f:
+            pickle.dump(rctd3_agent, f)
+        print("+"*50)
+        print(f"Checkpoint saved:\n{checkpoint_path}\n")
+        print("+"*50)
 
 current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-checkpoint_path = f"./saved_model/rctd3_fixed_reward_cost_checkpoint_{current_time}.bin"
-
+checkpoint_path = check_point_prefix + f"_{current_time}_episodes_{total_episodes}.bin"
+#checkpoint_path = f"./saved_model/rctd3_fixed_reward_cost_checkpoint_{current_time}.bin"
 with open(checkpoint_path, 'wb') as f:
     pickle.dump(rctd3_agent, f)
-
-print("Checkpoint saved.")
+print("+"*50)
+print(f"Checkpoint saved:\n{checkpoint_path}\n")
+print("+"*50)
