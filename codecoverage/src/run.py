@@ -13,8 +13,8 @@ profile_path = cal_cov_path + "/profile.txt"
 
 name = "c_cal"
 
-code_corpus_path = "/home/shareduser/ysc/go_compiler_testing/codecoverage/data/data_go_testcase_nocomment_token_size_filtered_multithreaded.jsonl"
-#code_corpus_path = "/home/shareduser/ysc/go_compiler_testing/codecoverage/data/data_test.jsonl"
+code_corpus_path = "/home/shareduser/ysc/go_compiler_testing/codecoverage/data/data_go_testcase_nocomment_token_size_filtered_100.jsonl"
+code_corpus_path = "/home/shareduser/ysc/go_compiler_testing/codecoverage/data/generated_code.jsonl"
 
 
 if mkdir(merged_path):
