@@ -80,9 +80,8 @@ class MaskedGoEnv:
 
         observation = self._state_to_observation(self.state)
 
-        # TODO: How to reward?
-
-        reward = (prob0 - old_prob0) - (prob1 - old_prob1)
+        #reward = (prob0 - old_prob0) - (prob1 - old_prob1)
+        reward = (prob0**2)/(prob0**2+prob1**2) - (old_prob0**2)/(old_prob0**2+old_prob1**2)
 
         cost = 0.0
         if prob0 <= old_prob0:
