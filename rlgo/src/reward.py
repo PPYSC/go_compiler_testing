@@ -56,17 +56,18 @@ class MaskedGoReward:
     def _generate(self, masked_code):
         return self.generator.generate(masked_code)
     
-    def get_reward_cost(self, code):
-        # TODO: compileable
+    def get_prob(self, code):
         if self._has_syntax_error(code):
             return -10, 10
         else:
             label, probability = self.discriminator.cluster(code)
-            return probability[1], probability[0]
+            prob0 = (probability[1] + 10) / 20
+            prob1 = (probability[0] + 10) / 20
+            return prob0, prob1
 
-    def get_code_reward_cost(self, code, mask):
+    def get_code_prob(self, code, mask):
         masked_code = self._mask(code, mask)
         new_code = masked_code.replace("<mask>", self._generate(masked_code))
-        reward, cost = self.get_reward_cost(new_code)
+        prob0, prob1 = self.get_prob(new_code)
         
-        return new_code, reward, cost
+        return new_code, prob0, prob1

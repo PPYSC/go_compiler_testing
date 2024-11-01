@@ -1,4 +1,5 @@
 
+import itertools
 import random
 import gymnasium as gym
 
@@ -22,15 +23,18 @@ class MaskedGoEnv:
         self.parser = GoParser()
 
         self.state = None
+        self.prob0 = None
+        self.prob1 = None
 
         self.iter_count = 0
 
-        self.corpus = data_from_jsonl(corpus_path)
+        self.corpus = itertools.cycle(data_from_jsonl(corpus_path))
 
         self.rewarder = MaskedGoReward()
 
     def _get_next_seed_code(self):
         self.state = next(self.corpus)["code"]
+        self.prob0, self.prob1 = self.rewarder.get_prob(self.state)
 
     def _get_total_nodes(self, code):
         def count_nodes(node):
@@ -58,6 +62,8 @@ class MaskedGoEnv:
 
     def step(self, action):
         old_state = self.state
+        old_prob0 = self.prob0
+        old_prob1 = self.prob1
 
         total_nodes = self._get_total_nodes(old_state)
         if total_nodes < 2:
@@ -66,16 +72,33 @@ class MaskedGoEnv:
             index = round((total_nodes - 2) * action[0].item())
             index = 1 + index
 
-        new_code, reward, cost = MaskedGoReward().get_code_reward_cost(self.state, index)
+        new_state, prob0, prob1 = MaskedGoReward().get_code_prob(old_state, index)
 
-        self.state = new_code
+        self.state = new_state
+        self.prob0 = prob0
+        self.prob1 = prob1
+
         observation = self._state_to_observation(self.state)
 
-        if reward > cost:
+        #reward = (prob0 - old_prob0) - (prob1 - old_prob1)
+        reward = (prob0**2)/(prob0**2+prob1**2) - (old_prob0**2)/(old_prob0**2+old_prob1**2)
+
+        cost = 0.0
+        if prob0 <= old_prob0:
+            cost += 1.0
+        if prob1 >= old_prob1:
+            cost += 1.0
+
+        if (old_prob0 != -10 and old_prob1 != 10) and (prob0 == -10 and prob1 == 10):
+            reward = -100
+            self.iter_count = 0
+            terminated = True
+        elif "func" not in new_state:
+            reward = -100
             self.iter_count = 0
             terminated = True
         else:
-            if self.iter_count < 10:
+            if self.iter_count < 9:
                 self.iter_count += 1
                 terminated = False
             else:
@@ -89,9 +112,9 @@ class MaskedGoEnv:
         print(f'='*50)
         print(f"action: {action},  index: {index}")
         print(f'*'*50)
-        print(f"old_state:\n {old_state}")
+        print(f"old_state:\nprob0: {old_prob0}, prob1: {old_prob1}\n{old_state}")
         print(f'*'*50)
-        print(f"new_state:\n {self.state}")
+        print(f"new_state:\nprob0: {prob0}, prob1: {prob1}\n{new_state}")
         print(f'*'*50)
         print(f"action_result: {action_result}")
         print(f'='*50)
@@ -99,7 +122,12 @@ class MaskedGoEnv:
         return action_result
     
     def reset(self, seed=None):
-        self._get_next_seed_code()
+        if seed is not None:
+            for i in range(seed + 1):
+                self._get_next_seed_code()
+        else:
+            self._get_next_seed_code()
+            
         observation = self._state_to_observation(self.state)
 
         return observation, self.action_space

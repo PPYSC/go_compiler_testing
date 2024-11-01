@@ -27,7 +27,7 @@ import pickle
 set_seed(0)
 
 
-from goenv_boxaction_fixed_reward_cost import MaskedGoEnv
+from goenv_boxaction import MaskedGoEnv
 
 set_seed(0)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
